@@ -41,8 +41,6 @@
 
 #define SSID_SIZE     100
 #define PASSWORD_SIZE 100
-#define USER_CONF_MAGIC                 0x0123456789ABCDEFuLL
-
 /* Private typedef------------------------------------------------------------*/
 
 typedef struct {
@@ -50,12 +48,6 @@ typedef struct {
   char password[PASSWORD_SIZE];
   uint8_t security;
 } wifi_config_t;
-
-typedef struct {
-  uint64_t      wifi_config_magic;        /**< The USER_CONF_MAGIC magic word signals that the wifi config
-                                               (wifi_config_t) is present in Flash. */
-  wifi_config_t wifi_config;
-} user_config_t;
 
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,7 +57,7 @@ extern UART_HandleTypeDef hDiscoUart;
 #endif /* TERMINAL_USE */
 
 static volatile uint8_t button_flag = 0;
-static user_config_t user_config;
+static wifi_config_t wifi_config;
 
 static  uint8_t http[1024];
 static  uint8_t  IP_Addr[4];
@@ -183,20 +175,19 @@ int wifi_connect(void)
 {
   wifi_start();
 
-  memset(&user_config, 0, sizeof(user_config));
+  memset(&wifi_config, 0, sizeof(wifi_config));
 
 //  Set wifi config
   printf("Configuring SSID and password.\n\r");
-  strcpy(user_config.wifi_config.ssid, "Philippe");
+  strcpy(wifi_config.ssid, "Philippe");
   char c = '3';
-  user_config.wifi_config.security = c - '0';
-  strcpy(user_config.wifi_config.password, "hahahaha");
-  user_config.wifi_config_magic = USER_CONF_MAGIC;
+  wifi_config.security = c - '0';
+  strcpy(wifi_config.password, "hahahaha");
 // Try to connect to wifi
-  printf("Connecting to %s\n\r", user_config.wifi_config.ssid);
+  printf("Connecting to %s\n\r", wifi_config.ssid);
   WIFI_Ecn_t security =  WIFI_ECN_WPA2_PSK;
 
-  if (WIFI_Connect(user_config.wifi_config.ssid, user_config.wifi_config.password, security) == WIFI_STATUS_OK)
+  if (WIFI_Connect(wifi_config.ssid, wifi_config.password, security) == WIFI_STATUS_OK)
   {
     if(WIFI_GetIP_Address(IP_Addr, sizeof(IP_Addr)) == WIFI_STATUS_OK)
     {
