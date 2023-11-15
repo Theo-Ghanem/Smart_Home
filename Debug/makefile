@@ -85,8 +85,8 @@ all: main-build
 main-build: Smart_Home.elf secondary-outputs
 
 # Tool invocations
-Smart_Home.elf Smart_Home.map: $(OBJS) $(USER_OBJS) C:\Users\Philippe\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Smart_Home.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Philippe\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Smart_Home.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Smart_Home.elf Smart_Home.map: $(OBJS) $(USER_OBJS) C:\Users\rfon2\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Smart_Home.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\rfon2\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Smart_Home.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
