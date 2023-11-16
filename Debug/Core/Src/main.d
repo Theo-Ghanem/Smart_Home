@@ -41,16 +41,13 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_iwdg.h \
  ../Core/Inc/es_wifi.h ../Core/Inc/es_wifi_conf.h ../Core/Inc/wifi.h \
-<<<<<<< HEAD
  ../Core/Inc/es_wifi_io.h ../Core/Inc/stm32l4s5i_iot01.h \
  ../Core/Inc/stm32l4s5i_iot01_tsensor.h ../Core/Inc/stm32l4s5i_iot01.h \
  ../Drivers/BSP/Components/../Components/hts221/hts221.h \
  ../Drivers/BSP/Components/../Components/hts221/../Common/hsensor.h \
  ../Drivers/BSP/Components/../Components/hts221/../Common/tsensor.h \
- ../Core/Inc/arm_math.h ../Drivers/CMSIS/Include/cmsis_compiler.h
-=======
- ../Core/Inc/es_wifi_io.h ../Core/Inc/html_builder.h
->>>>>>> design
+ ../Core/Inc/html_builder.h ../Core/Inc/arm_math.h \
+ ../Drivers/CMSIS/Include/cmsis_compiler.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -97,15 +94,12 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/es_wifi_conf.h:
 ../Core/Inc/wifi.h:
 ../Core/Inc/es_wifi_io.h:
-<<<<<<< HEAD
 ../Core/Inc/stm32l4s5i_iot01.h:
 ../Core/Inc/stm32l4s5i_iot01_tsensor.h:
 ../Core/Inc/stm32l4s5i_iot01.h:
 ../Drivers/BSP/Components/../Components/hts221/hts221.h:
 ../Drivers/BSP/Components/../Components/hts221/../Common/hsensor.h:
 ../Drivers/BSP/Components/../Components/hts221/../Common/tsensor.h:
+../Core/Inc/html_builder.h:
 ../Core/Inc/arm_math.h:
 ../Drivers/CMSIS/Include/cmsis_compiler.h:
-=======
-../Core/Inc/html_builder.h:
->>>>>>> design

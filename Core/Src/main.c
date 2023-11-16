@@ -17,12 +17,9 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-<<<<<<< HEAD
 #include "stm32l4s5i_iot01.h"
 #include "stm32l4s5i_iot01_tsensor.h"
-=======
 #include "html_builder.h"
->>>>>>> design
 
 #ifdef __ICCARM__
 #include <LowLevelIOInterface.h>
@@ -143,13 +140,9 @@ int main(void)
 
 
   BSP_COM_Init(COM1, &hDiscoUart);
-<<<<<<< HEAD
-
-=======
   BSP_TSENSOR_Init();
 //  BSP_PSENSOR_Init();
 //  BSP_HSENSOR_Init();
->>>>>>> design
 
   printf("\n****** WIFI Web Server demonstration ******\n\r");
 
@@ -210,10 +203,10 @@ int wifi_connect(void)
 
 //  Set wifi config
   printf("Configuring SSID and password.\n\r");
-  strcpy(wifi_config.ssid, "Raph iPhone");
+  strcpy(wifi_config.ssid, "Hmm");
   char c = '3';
   wifi_config.security = c - '0';
-  strcpy(wifi_config.password, "Centre Bell");
+  strcpy(wifi_config.password, "goodmorning");
 // Try to connect to wifi
   printf("Connecting to %s\n\r", wifi_config.ssid);
   WIFI_Ecn_t security =  WIFI_ECN_WPA2_PSK;
