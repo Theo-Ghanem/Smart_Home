@@ -19,6 +19,7 @@
 #include "main.h"
 #include "stm32l4s5i_iot01.h"
 #include "stm32l4s5i_iot01_tsensor.h"
+#include "html_builder.h"
 
 #ifdef __ICCARM__
 #include <LowLevelIOInterface.h>
@@ -64,7 +65,7 @@ extern UART_HandleTypeDef hDiscoUart;
 static volatile uint8_t button_flag = 0;
 static wifi_config_t wifi_config;
 
-static  uint8_t http[1024];
+static  uint8_t http[5000];
 static  uint8_t  IP_Addr[4];
 static  int     LedState = 0;
 float32_t sin_value = 0.0;
@@ -139,9 +140,11 @@ int main(void)
 
 
   BSP_COM_Init(COM1, &hDiscoUart);
+  BSP_TSENSOR_Init();
+//  BSP_PSENSOR_Init();
+//  BSP_HSENSOR_Init();
 
-
-  printf("\n****** WIFI Web Server demonstration ******\n\r");
+  printf("\n****** Smart Home Secure Server ******\n\r");
 
 #endif /* TERMINAL_USE */
   BSP_TSENSOR_Init();
@@ -200,10 +203,10 @@ int wifi_connect(void)
 
 //  Set wifi config
   printf("Configuring SSID and password.\n\r");
-  strcpy(wifi_config.ssid, "Raph iPhone");
+  strcpy(wifi_config.ssid, "Hmm");
   char c = '3';
   wifi_config.security = c - '0';
-  strcpy(wifi_config.password, "Centre Bell");
+  strcpy(wifi_config.password, "goodmorning");
 // Try to connect to wifi
   printf("Connecting to %s\n\r", wifi_config.ssid);
   WIFI_Ecn_t security =  WIFI_ECN_WPA2_PSK;
@@ -257,16 +260,18 @@ int wifi_server(void)
     {
         LOG(("."));
         int count = 0;
-        while (count < 200)
-		{
-			for (float increment = 0; increment < 63; increment+=0.2) {
-				for (int delay = 0; delay<90; delay++) {;}
+        if(LedState ==1){
+			while (count < 200)
+			{
+				for (float increment = 0; increment < 63; increment+=0.2) {
+					for (int delay = 0; delay<90; delay++) {;}
 
-				sin_value = arm_sin_f32(increment)*100+100;
+					sin_value = arm_sin_f32(increment)*100+100;
 
-				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, sin_value);
+					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, sin_value);
+				}
+				count++;
 			}
-			count++;
         }
     }
 
@@ -295,6 +300,7 @@ int wifi_server(void)
 static bool WebServerProcess(void)
 {
   uint8_t temp;
+  uint8_t pres;
   uint16_t  respLen;
   static   uint8_t resp[1024];
   bool    stopserver=false;
@@ -307,7 +313,8 @@ static bool WebServerProcess(void)
    {
       if(strstr((char *)resp, "GET")) /* GET: put web page */
       {
-        temp = (int) BSP_TSENSOR_ReadTemp();
+        temp = (uint8_t) BSP_TSENSOR_ReadTemp();
+//        pres = (uint8_t) BSP_PSENSOR_ReadPres();
         if(SendWebPage(LedState, temp) != WIFI_STATUS_OK)
         {
           LOG(("> ERROR : Cannot send web page\n\r"));
@@ -371,43 +378,51 @@ static bool WebServerProcess(void)
   * @param  None
   * @retval None
   */
-static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temperature)
+static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temp)
 {
-  uint8_t  temp[50];
-  uint16_t SentDataLength;
-  WIFI_Status_t ret;
-
   /* construct web page content */
   strcpy((char *)http, (char *)"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n");
-  strcat((char *)http, (char *)"<html>\r\n<body>\r\n");
-  strcat((char *)http, (char *)"<title>STM32 Web Server</title>\r\n");
-  strcat((char *)http, (char *)"<h2>STM32L4S Discovery kit IoT node : Web server using WiFi with STM32</h2>\r\n");
-  strcat((char *)http, (char *)"<br /><hr>\r\n");
-  strcat((char *)http, (char *)"<p><form method=\"POST\"><strong>Temp: <input type=\"text\" value=\"");
-  sprintf((char *)temp, "%d", temperature);
-  strcat((char *)http, (char *)temp);
-  strcat((char *)http, (char *)"\"> <sup>O</sup>C");
+  strcat((char *)http, inject(0, temp, 50));
 
-  if (ledIsOn)
+  /* http is the buffer which contains the data to send. */
+  /* httpDataLength is the length of the data to be sent. */
+  WIFI_Status_t ret;
+  uint32_t httpDataLength = strlen(http);
+  uint32_t dataLengthToSend;
+  uint32_t dataLengthSent = 0;
+
+  while( httpDataLength > 0 )
   {
-    strcat((char *)http, (char *)"<p><input type=\"radio\" name=\"radio\" value=\"0\" >LED off");
-    strcat((char *)http, (char *)"<br><input type=\"radio\" name=\"radio\" value=\"1\" checked>LED on");
-  }
-  else
-  {
-    strcat((char *)http, (char *)"<p><input type=\"radio\" name=\"radio\" value=\"0\" checked>LED off");
-    strcat((char *)http, (char *)"<br><input type=\"radio\" name=\"radio\" value=\"1\" >LED on");
-  }
+      if(httpDataLength > 500)
+      {
+          dataLengthToSend = 500;
+      }
+      else
+      {
+          dataLengthToSend = httpDataLength;
+      }
 
-  strcat((char *)http, (char *)"</strong><p><input type=\"submit\"></form></span>");
-  strcat((char *)http, (char *)"</body>\r\n</html>\r\n");
+      uint16_t curDataLengthSent;
+      ret = WIFI_SendData(0, &http[dataLengthSent], dataLengthToSend, &curDataLengthSent, WIFI_WRITE_TIMEOUT );
 
-  ret = WIFI_SendData(0, (uint8_t *)http, strlen((char *)http), &SentDataLength, WIFI_WRITE_TIMEOUT);
-
-  if((ret == WIFI_STATUS_OK) && (SentDataLength != strlen((char *)http)))
-  {
-    ret = WIFI_STATUS_ERROR;
+      if( ret != WIFI_STATUS_OK)
+      {
+          /* Handle failure (probably print a log). */
+          break;
+      }
+      else
+      {
+          /* Update what is left to send based on the length of the data actually sent. */
+    	  dataLengthSent += curDataLengthSent;
+          httpDataLength -= curDataLengthSent;
+      }
   }
+//  ret = WIFI_SendData(0, (uint8_t *)http, strlen((char *)http), &SentDataLength, WIFI_WRITE_TIMEOUT);
+
+//  if((ret == WIFI_STATUS_OK) && (SentDataLength != strlen((char *)http)))
+//  {
+//    ret = WIFI_STATUS_ERROR;
+//  }
 
   return ret;
 }
