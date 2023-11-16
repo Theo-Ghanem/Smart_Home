@@ -1,2 +1,6 @@
 *.o
 *.mk
+makefile
+Smart_Home.elf
+Smart_Home.list
+Smart_Home.map
