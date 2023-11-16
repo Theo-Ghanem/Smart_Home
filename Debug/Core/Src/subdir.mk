@@ -7,6 +7,7 @@
 C_SRCS += \
 ../Core/Src/es_wifi.c \
 ../Core/Src/es_wifi_io.c \
+../Core/Src/html_builder.c \
 ../Core/Src/main.c \
 ../Core/Src/stm32l4s5i_iot01.c \
 ../Core/Src/stm32l4s5i_iot01_accelero.c \
@@ -24,6 +25,7 @@ C_SRCS += \
 OBJS += \
 ./Core/Src/es_wifi.o \
 ./Core/Src/es_wifi_io.o \
+./Core/Src/html_builder.o \
 ./Core/Src/main.o \
 ./Core/Src/stm32l4s5i_iot01.o \
 ./Core/Src/stm32l4s5i_iot01_accelero.o \
@@ -41,6 +43,7 @@ OBJS += \
 C_DEPS += \
 ./Core/Src/es_wifi.d \
 ./Core/Src/es_wifi_io.d \
+./Core/Src/html_builder.d \
 ./Core/Src/main.d \
 ./Core/Src/stm32l4s5i_iot01.d \
 ./Core/Src/stm32l4s5i_iot01_accelero.d \
@@ -63,7 +66,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/es_wifi.cyclo ./Core/Src/es_wifi.d ./Core/Src/es_wifi.o ./Core/Src/es_wifi.su ./Core/Src/es_wifi_io.cyclo ./Core/Src/es_wifi_io.d ./Core/Src/es_wifi_io.o ./Core/Src/es_wifi_io.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32l4s5i_iot01.cyclo ./Core/Src/stm32l4s5i_iot01.d ./Core/Src/stm32l4s5i_iot01.o ./Core/Src/stm32l4s5i_iot01.su ./Core/Src/stm32l4s5i_iot01_accelero.cyclo ./Core/Src/stm32l4s5i_iot01_accelero.d ./Core/Src/stm32l4s5i_iot01_accelero.o ./Core/Src/stm32l4s5i_iot01_accelero.su ./Core/Src/stm32l4s5i_iot01_gyro.cyclo ./Core/Src/stm32l4s5i_iot01_gyro.d ./Core/Src/stm32l4s5i_iot01_gyro.o ./Core/Src/stm32l4s5i_iot01_gyro.su ./Core/Src/stm32l4s5i_iot01_hsensor.cyclo ./Core/Src/stm32l4s5i_iot01_hsensor.d ./Core/Src/stm32l4s5i_iot01_hsensor.o ./Core/Src/stm32l4s5i_iot01_hsensor.su ./Core/Src/stm32l4s5i_iot01_magneto.cyclo ./Core/Src/stm32l4s5i_iot01_magneto.d ./Core/Src/stm32l4s5i_iot01_magneto.o ./Core/Src/stm32l4s5i_iot01_magneto.su ./Core/Src/stm32l4s5i_iot01_psensor.cyclo ./Core/Src/stm32l4s5i_iot01_psensor.d ./Core/Src/stm32l4s5i_iot01_psensor.o ./Core/Src/stm32l4s5i_iot01_psensor.su ./Core/Src/stm32l4s5i_iot01_tsensor.cyclo ./Core/Src/stm32l4s5i_iot01_tsensor.d ./Core/Src/stm32l4s5i_iot01_tsensor.o ./Core/Src/stm32l4s5i_iot01_tsensor.su ./Core/Src/stm32l4xx_it.cyclo ./Core/Src/stm32l4xx_it.d ./Core/Src/stm32l4xx_it.o ./Core/Src/stm32l4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32l4xx.cyclo ./Core/Src/system_stm32l4xx.d ./Core/Src/system_stm32l4xx.o ./Core/Src/system_stm32l4xx.su ./Core/Src/wifi.cyclo ./Core/Src/wifi.d ./Core/Src/wifi.o ./Core/Src/wifi.su
+	-$(RM) ./Core/Src/es_wifi.cyclo ./Core/Src/es_wifi.d ./Core/Src/es_wifi.o ./Core/Src/es_wifi.su ./Core/Src/es_wifi_io.cyclo ./Core/Src/es_wifi_io.d ./Core/Src/es_wifi_io.o ./Core/Src/es_wifi_io.su ./Core/Src/html_builder.cyclo ./Core/Src/html_builder.d ./Core/Src/html_builder.o ./Core/Src/html_builder.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32l4s5i_iot01.cyclo ./Core/Src/stm32l4s5i_iot01.d ./Core/Src/stm32l4s5i_iot01.o ./Core/Src/stm32l4s5i_iot01.su ./Core/Src/stm32l4s5i_iot01_accelero.cyclo ./Core/Src/stm32l4s5i_iot01_accelero.d ./Core/Src/stm32l4s5i_iot01_accelero.o ./Core/Src/stm32l4s5i_iot01_accelero.su ./Core/Src/stm32l4s5i_iot01_gyro.cyclo ./Core/Src/stm32l4s5i_iot01_gyro.d ./Core/Src/stm32l4s5i_iot01_gyro.o ./Core/Src/stm32l4s5i_iot01_gyro.su ./Core/Src/stm32l4s5i_iot01_hsensor.cyclo ./Core/Src/stm32l4s5i_iot01_hsensor.d ./Core/Src/stm32l4s5i_iot01_hsensor.o ./Core/Src/stm32l4s5i_iot01_hsensor.su ./Core/Src/stm32l4s5i_iot01_magneto.cyclo ./Core/Src/stm32l4s5i_iot01_magneto.d ./Core/Src/stm32l4s5i_iot01_magneto.o ./Core/Src/stm32l4s5i_iot01_magneto.su ./Core/Src/stm32l4s5i_iot01_psensor.cyclo ./Core/Src/stm32l4s5i_iot01_psensor.d ./Core/Src/stm32l4s5i_iot01_psensor.o ./Core/Src/stm32l4s5i_iot01_psensor.su ./Core/Src/stm32l4s5i_iot01_tsensor.cyclo ./Core/Src/stm32l4s5i_iot01_tsensor.d ./Core/Src/stm32l4s5i_iot01_tsensor.o ./Core/Src/stm32l4s5i_iot01_tsensor.su ./Core/Src/stm32l4xx_it.cyclo ./Core/Src/stm32l4xx_it.d ./Core/Src/stm32l4xx_it.o ./Core/Src/stm32l4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32l4xx.cyclo ./Core/Src/system_stm32l4xx.d ./Core/Src/system_stm32l4xx.o ./Core/Src/system_stm32l4xx.su ./Core/Src/wifi.cyclo ./Core/Src/wifi.d ./Core/Src/wifi.o ./Core/Src/wifi.su
 
 .PHONY: clean-Core-2f-Src
 

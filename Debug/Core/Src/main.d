@@ -43,7 +43,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/../Components/lis3mdl/lis3mdl.h \
  ../Core/Inc/../Components/lis3mdl/../Common/magneto.h \
  ../Core/Inc/es_wifi.h ../Core/Inc/es_wifi_conf.h ../Core/Inc/wifi.h \
- ../Core/Inc/es_wifi_io.h
+ ../Core/Inc/es_wifi_io.h ../Core/Inc/html_builder.h
 ../Core/Inc/main.h:
 ../Core/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -107,3 +107,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/es_wifi_conf.h:
 ../Core/Inc/wifi.h:
 ../Core/Inc/es_wifi_io.h:
+../Core/Inc/html_builder.h:
