@@ -144,7 +144,7 @@ int main(void)
 //  BSP_PSENSOR_Init();
 //  BSP_HSENSOR_Init();
 
-  printf("\n****** WIFI Web Server demonstration ******\n\r");
+  printf("\n****** Smart Home Secure Server ******\n\r");
 
 #endif /* TERMINAL_USE */
   BSP_TSENSOR_Init();
@@ -260,16 +260,18 @@ int wifi_server(void)
     {
         LOG(("."));
         int count = 0;
-        while (count < 200)
-		{
-			for (float increment = 0; increment < 63; increment+=0.2) {
-				for (int delay = 0; delay<90; delay++) {;}
+        if(LedState ==1){
+			while (count < 200)
+			{
+				for (float increment = 0; increment < 63; increment+=0.2) {
+					for (int delay = 0; delay<90; delay++) {;}
 
-				sin_value = arm_sin_f32(increment)*100+100;
+					sin_value = arm_sin_f32(increment)*100+100;
 
-				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, sin_value);
+					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, sin_value);
+				}
+				count++;
 			}
-			count++;
         }
     }
 
