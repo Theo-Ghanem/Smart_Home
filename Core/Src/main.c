@@ -17,10 +17,15 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stm32l4s5i_iot01.h"
+#include "stm32l4s5i_iot01_tsensor.h"
 
 #ifdef __ICCARM__
 #include <LowLevelIOInterface.h>
 #endif
+
+#define ARM_MATH_CM4
+#include "arm_math.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define PORT           80
@@ -62,6 +67,9 @@ static wifi_config_t wifi_config;
 static  uint8_t http[1024];
 static  uint8_t  IP_Addr[4];
 static  int     LedState = 0;
+float32_t sin_value = 0.0;
+
+DAC_HandleTypeDef hdac1;
 
 /* Private function prototypes -----------------------------------------------*/
 #if defined (TERMINAL_USE)
@@ -85,6 +93,9 @@ static bool WebServerProcess(void);
 static void Button_ISR(void);
 static void Button_Reset(void);
 static uint8_t Button_WaitForPush(uint32_t delay);
+static void MX_GPIO_Init(void);
+static void MX_DAC1_Init(void);
+
 
 /* Private functions ---------------------------------------------------------*/
 /**
@@ -99,6 +110,12 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
+
+  // Init speaker
+  MX_GPIO_Init();
+  MX_DAC1_Init();
+
+  HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
   /* Configure LED2 */
   BSP_LED_Init(LED2);
@@ -122,13 +139,17 @@ int main(void)
 
 
   BSP_COM_Init(COM1, &hDiscoUart);
-  BSP_TSENSOR_Init();
+
 
   printf("\n****** WIFI Web Server demonstration ******\n\r");
 
 #endif /* TERMINAL_USE */
+  BSP_TSENSOR_Init();
+
+
 
   wifi_server();
+
 }
 
 /**
@@ -179,10 +200,10 @@ int wifi_connect(void)
 
 //  Set wifi config
   printf("Configuring SSID and password.\n\r");
-  strcpy(wifi_config.ssid, "Philippe");
+  strcpy(wifi_config.ssid, "Raph iPhone");
   char c = '3';
   wifi_config.security = c - '0';
-  strcpy(wifi_config.password, "hahahaha");
+  strcpy(wifi_config.password, "Centre Bell");
 // Try to connect to wifi
   printf("Connecting to %s\n\r", wifi_config.ssid);
   WIFI_Ecn_t security =  WIFI_ECN_WPA2_PSK;
@@ -235,6 +256,18 @@ int wifi_server(void)
     while (WIFI_STATUS_OK != WIFI_WaitServerConnection(SOCKET, 1000, RemoteIP, sizeof(RemoteIP), &RemotePort))
     {
         LOG(("."));
+        int count = 0;
+        while (count < 200)
+		{
+			for (float increment = 0; increment < 63; increment+=0.2) {
+				for (int delay = 0; delay<90; delay++) {;}
+
+				sin_value = arm_sin_f32(increment)*100+100;
+
+				HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, sin_value);
+			}
+			count++;
+        }
     }
 
     LOG(("\nClient connected %d.%d.%d.%d:%d\n\r",RemoteIP[0],RemoteIP[1],RemoteIP[2],RemoteIP[3],RemotePort));
@@ -398,41 +431,84 @@ static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temperature)
   * @param  None
   * @retval None
   */
-static void SystemClock_Config(void)
+void SystemClock_Config(void)
 {
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_OscInitTypeDef RCC_OscInitStruct;
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /* MSI is enabled after System reset, activate PLL with MSI as source */
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 40;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLP = 7;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    /* Initialization Error */
-    while(1);
+    Error_Handler();
   }
 
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
-     clocks dividers */
-  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
-    /* Initialization Error */
-    while(1);
+    Error_Handler();
   }
+}
+
+static void MX_DAC1_Init(void)
+{
+
+  DAC_ChannelConfTypeDef sConfig = {0};
+
+  /** DAC Initialization
+  */
+  hdac1.Instance = DAC1;
+  if (HAL_DAC_Init(&hdac1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** DAC channel OUT1 config
+  */
+  sConfig.DAC_SampleAndHold = DAC_SAMPLEANDHOLD_DISABLE;
+  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
+  sConfig.DAC_HighFrequency = DAC_HIGH_FREQUENCY_INTERFACE_MODE_ABOVE_80MHZ;
+  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+  sConfig.DAC_ConnectOnChipPeripheral = DAC_CHIPCONNECT_DISABLE;
+  sConfig.DAC_UserTrimming = DAC_TRIMMING_FACTORY;
+  if (HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+static void MX_GPIO_Init(void)
+{
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
 }
 
 /**
@@ -591,3 +667,15 @@ static void Button_ISR(void)
   button_flag++;
 }
 
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+}

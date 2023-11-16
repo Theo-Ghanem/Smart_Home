@@ -22,14 +22,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal.h"
-#include "stm32l4s5i_iot01.h"
 #include "stm32l4xx_hal_iwdg.h"
-#include "stm32l4s5i_iot01_accelero.h"
-#include "stm32l4s5i_iot01_psensor.h"
-#include "stm32l4s5i_iot01_gyro.h"
-#include "stm32l4s5i_iot01_hsensor.h"
-#include "stm32l4s5i_iot01_tsensor.h"
-#include "stm32l4s5i_iot01_magneto.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -53,6 +46,7 @@
 #define TEMP110_CAL_ADDR  ((uint16_t*) ((uint32_t)0x1FFF75CA))  /* Internal temperature sensor, parameter TS_CAL2: TS ADC raw data acquired at a temperature of  110 DegC (+-5 DegC) */
 #define VDDA_TEMP_CAL                  ((uint32_t)3000)        /* Vdda value with which temperature sensor has been calibrated in production (+-10 mV). */
 
+void Error_Handler(void);
 
 /* Private macro -------------------------------------------------------------*/
 /**

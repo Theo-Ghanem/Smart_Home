@@ -155,8 +155,8 @@ void EXTI1_IRQHandler(void)
  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
 }
 
-void EXTI15_10_IRQHandler(void)
-{
-  HAL_GPIO_EXTI_IRQHandler(USER_BUTTON_PIN);
-}
+//void EXTI15_10_IRQHandler(void)
+//{
+//  HAL_GPIO_EXTI_IRQHandler(USER_BUTTON_PIN);
+//}
 

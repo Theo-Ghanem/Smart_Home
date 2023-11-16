@@ -9,34 +9,36 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include Drivers/STM32L4xx_HAL_Driver/Src/Legacy/subdir.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
+-include Drivers/BSP/Components/wm8994/subdir.mk
+-include Drivers/BSP/Components/stmpe811/subdir.mk
+-include Drivers/BSP/Components/stmpe1600/subdir.mk
+-include Drivers/BSP/Components/st7789h2/subdir.mk
+-include Drivers/BSP/Components/st7735/subdir.mk
+-include Drivers/BSP/Components/st25dv/subdir.mk
+-include Drivers/BSP/Components/ov9655/subdir.mk
+-include Drivers/BSP/Components/mfxstm32l152/subdir.mk
+-include Drivers/BSP/Components/m24sr/subdir.mk
+-include Drivers/BSP/Components/lsm6dsl/subdir.mk
+-include Drivers/BSP/Components/lsm303dlhc/subdir.mk
+-include Drivers/BSP/Components/lsm303c/subdir.mk
+-include Drivers/BSP/Components/ls016b8uy/subdir.mk
+-include Drivers/BSP/Components/lps22hb/subdir.mk
+-include Drivers/BSP/Components/lis3mdl/subdir.mk
+-include Drivers/BSP/Components/l3gd20/subdir.mk
+-include Drivers/BSP/Components/hx8347i/subdir.mk
+-include Drivers/BSP/Components/hx8347g/subdir.mk
+-include Drivers/BSP/Components/hts221/subdir.mk
+-include Drivers/BSP/Components/ft6x06/subdir.mk
+-include Drivers/BSP/Components/ft5336/subdir.mk
+-include Drivers/BSP/Components/ft3x67/subdir.mk
+-include Drivers/BSP/Components/cy8c4014lqi/subdir.mk
+-include Drivers/BSP/Components/cs43l22/subdir.mk
+-include Drivers/BSP/Components/cs42l51/subdir.mk
+-include Drivers/BSP/B-L4S5I-IOT01/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
--include Core/Components/wm8994/subdir.mk
--include Core/Components/stmpe811/subdir.mk
--include Core/Components/stmpe1600/subdir.mk
--include Core/Components/st7789h2/subdir.mk
--include Core/Components/st7735/subdir.mk
--include Core/Components/st25dv/subdir.mk
--include Core/Components/ov9655/subdir.mk
--include Core/Components/mfxstm32l152/subdir.mk
--include Core/Components/m24sr/subdir.mk
--include Core/Components/lsm6dsl/subdir.mk
--include Core/Components/lsm303dlhc/subdir.mk
--include Core/Components/lsm303c/subdir.mk
--include Core/Components/ls016b8uy/subdir.mk
--include Core/Components/lps22hb/subdir.mk
--include Core/Components/lis3mdl/subdir.mk
--include Core/Components/l3gd20/subdir.mk
--include Core/Components/hx8347i/subdir.mk
--include Core/Components/hx8347g/subdir.mk
--include Core/Components/hts221/subdir.mk
--include Core/Components/ft6x06/subdir.mk
--include Core/Components/ft5336/subdir.mk
--include Core/Components/ft3x67/subdir.mk
--include Core/Components/cy8c4014lqi/subdir.mk
--include Core/Components/cs43l22/subdir.mk
--include Core/Components/cs42l51/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -86,7 +88,7 @@ main-build: Smart_Home.elf secondary-outputs
 
 # Tool invocations
 Smart_Home.elf Smart_Home.map: $(OBJS) $(USER_OBJS) C:\Users\rfon2\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Smart_Home.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\rfon2\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Smart_Home.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "Smart_Home.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\rfon2\STM32CubeIDE\workspace_1.13.1\Smart_Home\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Smart_Home.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

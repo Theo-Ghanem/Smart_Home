@@ -1,0 +1,13 @@
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:191:20:FMC_NORSRAM_Init	32	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:340:19:FMC_NORSRAM_DeInit	24	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:399:19:FMC_NORSRAM_Timing_Init	32	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:461:19:FMC_NORSRAM_Extended_Timing_Init	24	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:531:19:FMC_NORSRAM_WriteOperation_Enable	16	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:549:19:FMC_NORSRAM_WriteOperation_Disable	16	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:621:19:FMC_NAND_Init	16	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:653:19:FMC_NAND_CommonSpace_Timing_Init	24	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:684:19:FMC_NAND_AttributeSpace_Timing_Init	24	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:713:19:FMC_NAND_DeInit	16	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:761:19:FMC_NAND_ECC_Enable	16	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:783:19:FMC_NAND_ECC_Disable	16	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_fmc.c:806:19:FMC_NAND_GetECC	32	static
