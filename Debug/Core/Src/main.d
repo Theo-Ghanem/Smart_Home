@@ -29,23 +29,38 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rng.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi_ex.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_sram.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_fmc.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_iwdg.h \
  ../Core/Inc/es_wifi.h ../Core/Inc/es_wifi_conf.h ../Core/Inc/wifi.h \
- ../Core/Inc/es_wifi_io.h ../Core/Inc/stm32l4s5i_iot01.h \
- ../Core/Inc/stm32l4s5i_iot01_tsensor.h ../Core/Inc/stm32l4s5i_iot01.h \
- ../Drivers/BSP/Components/../Components/hts221/hts221.h \
- ../Drivers/BSP/Components/../Components/hts221/../Common/hsensor.h \
- ../Drivers/BSP/Components/../Components/hts221/../Common/tsensor.h \
+ ../Core/Inc/es_wifi_io.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
+ ../Core/Inc/FreeRTOSConfig.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_tsensor.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/../Components/hts221/hts221.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/../Components/hts221/../Common/hsensor.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/../Components/hts221/../Common/tsensor.h \
  ../Core/Inc/html_builder.h ../Core/Inc/arm_math.h \
  ../Drivers/CMSIS/Include/cmsis_compiler.h
 ../Core/Inc/main.h:
@@ -79,12 +94,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rng.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi_ex.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_sram.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_fmc.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
@@ -94,12 +105,29 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/es_wifi_conf.h:
 ../Core/Inc/wifi.h:
 ../Core/Inc/es_wifi_io.h:
-../Core/Inc/stm32l4s5i_iot01.h:
-../Core/Inc/stm32l4s5i_iot01_tsensor.h:
-../Core/Inc/stm32l4s5i_iot01.h:
-../Drivers/BSP/Components/../Components/hts221/hts221.h:
-../Drivers/BSP/Components/../Components/hts221/../Common/hsensor.h:
-../Drivers/BSP/Components/../Components/hts221/../Common/tsensor.h:
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
+../Core/Inc/FreeRTOSConfig.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
+../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
+../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01.h:
+../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_tsensor.h:
+../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01.h:
+../Drivers/BSP/B-L4S5I-IOT01/../Components/hts221/hts221.h:
+../Drivers/BSP/B-L4S5I-IOT01/../Components/hts221/../Common/hsensor.h:
+../Drivers/BSP/B-L4S5I-IOT01/../Components/hts221/../Common/tsensor.h:
 ../Core/Inc/html_builder.h:
 ../Core/Inc/arm_math.h:
 ../Drivers/CMSIS/Include/cmsis_compiler.h:

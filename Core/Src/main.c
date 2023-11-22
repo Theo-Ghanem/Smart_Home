@@ -17,13 +17,10 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "stm32l4s5i_iot01.h"
 #include "stm32l4s5i_iot01_tsensor.h"
 #include "html_builder.h"
-
-#ifdef __ICCARM__
-#include <LowLevelIOInterface.h>
-#endif
 
 #define ARM_MATH_CM4
 #include "arm_math.h"
@@ -33,20 +30,14 @@
 
 #define TERMINAL_USE
 
-
 #define WIFI_WRITE_TIMEOUT 10000
 #define WIFI_READ_TIMEOUT  10000
 #define SOCKET                 0
-
-
-#ifdef  TERMINAL_USE
 #define LOG(a) printf a
-#else
-#define LOG(a)
-#endif
 
 #define SSID_SIZE     100
 #define PASSWORD_SIZE 100
+
 /* Private typedef------------------------------------------------------------*/
 
 typedef struct {
@@ -55,25 +46,24 @@ typedef struct {
   uint8_t security;
 } wifi_config_t;
 
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-#if defined (TERMINAL_USE)
-extern UART_HandleTypeDef hDiscoUart;
-#endif /* TERMINAL_USE */
 
 static volatile uint8_t button_flag = 0;
 static wifi_config_t wifi_config;
 
-static  uint8_t http[5000];
-static  uint8_t  IP_Addr[4];
-static  int     LedState = 0;
+static uint8_t http[5000];
+static uint8_t  IP_Addr[4];
+static int LedState = 0;
 float32_t sin_value = 0.0;
 
+osThreadId defaultTaskHandle;
+osThreadId secondTaskHandle;
 DAC_HandleTypeDef hdac1;
+UART_HandleTypeDef huart1;
 
 /* Private function prototypes -----------------------------------------------*/
-#if defined (TERMINAL_USE)
+
 #ifdef __GNUC__
 /* With GCC, small printf (option LD Linker->Libraries->Small printf
    set to 'Yes') calls __io_putchar() */
@@ -83,7 +73,6 @@ DAC_HandleTypeDef hdac1;
 #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #define GETCHAR_PROTOTYPE int fgetc(FILE *f)
 #endif /* __GNUC__ */
-#endif /* TERMINAL_USE */
 
 static void SystemClock_Config(void);
 static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temperature);
@@ -96,6 +85,9 @@ static void Button_Reset(void);
 static uint8_t Button_WaitForPush(uint32_t delay);
 static void MX_GPIO_Init(void);
 static void MX_DAC1_Init(void);
+static void MX_USART1_UART_Init(void);
+static void StartDefaultTask(void const * argument);
+static void SecondTask(void const * argument);
 
 
 /* Private functions ---------------------------------------------------------*/
@@ -112,46 +104,39 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-  // Init speaker
+  // Init peripherals
   MX_GPIO_Init();
   MX_DAC1_Init();
-
-  HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
-
-  /* Configure LED2 */
-  BSP_LED_Init(LED2);
-
-  /* USER push button is used to ask if reconfiguration is needed */
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
-
-  /* WIFI Web Server demonstration */
-#if defined (TERMINAL_USE)
-  /* Initialize all configured peripherals */
-  hDiscoUart.Instance = DISCOVERY_COM1;
-  hDiscoUart.Init.BaudRate = 115200;
-  hDiscoUart.Init.WordLength = UART_WORDLENGTH_8B;
-  hDiscoUart.Init.StopBits = UART_STOPBITS_1;
-  hDiscoUart.Init.Parity = UART_PARITY_NONE;
-  hDiscoUart.Init.Mode = UART_MODE_TX_RX;
-  hDiscoUart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  hDiscoUart.Init.OverSampling = UART_OVERSAMPLING_16;
-  hDiscoUart.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hDiscoUart.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-
-
-  BSP_COM_Init(COM1, &hDiscoUart);
+  MX_USART1_UART_Init();
   BSP_TSENSOR_Init();
 //  BSP_PSENSOR_Init();
 //  BSP_HSENSOR_Init();
+  BSP_LED_Init(LED2);
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+  BSP_COM_Init(COM1, &huart1);
+
+  // Start peripherals
+  HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
 
   printf("\n****** Smart Home Secure Server ******\n\r");
 
-#endif /* TERMINAL_USE */
-  BSP_TSENSOR_Init();
+//  /* Create the thread(s) */
+//  /* definition and creation of defaultTask */
+//  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+//  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+//
+//  /* definition and creation of secondTask */
+//  osThreadDef(secondTask, SecondTask, osPriorityLow, 0, 128);
+//  secondTaskHandle = osThreadCreate(osThread(secondTask), NULL);
 
-
+//  /* Start scheduler */
+//  osKernelStart();
 
   wifi_server();
+
+  while(1) {
+	 // We should never be here
+  }
 
 }
 
@@ -203,7 +188,7 @@ int wifi_connect(void)
 
 //  Set wifi config
   printf("Configuring SSID and password.\n\r");
-  strcpy(wifi_config.ssid, "Hmm");
+  strcpy(wifi_config.ssid, "Raph iPhone");
   char c = '3';
   wifi_config.security = c - '0';
   strcpy(wifi_config.password, "goodmorning");
@@ -428,22 +413,7 @@ static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temp)
 }
 
 /**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow :
-  *            System Clock source            = PLL (MSI)
-  *            SYSCLK(Hz)                     = 80000000
-  *            HCLK(Hz)                       = 80000000
-  *            AHB Prescaler                  = 1
-  *            APB1 Prescaler                 = 1
-  *            APB2 Prescaler                 = 1
-  *            MSI Frequency(Hz)              = 4000000
-  *            PLL_M                          = 1
-  *            PLL_N                          = 40
-  *            PLL_R                          = 2
-  *            PLL_P                          = 7
-  *            PLL_Q                          = 4
-  *            Flash Latency(WS)              = 4
-  * @param  None
+  * @brief System Clock Configuration
   * @retval None
   */
 void SystemClock_Config(void)
@@ -520,11 +490,87 @@ static void MX_DAC1_Init(void)
 
 }
 
+static void MX_USART1_UART_Init(void)
+{
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
 static void MX_GPIO_Init(void)
 {
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
 }
+
+/* StartDefaultTask */
+void StartDefaultTask(void const * argument)
+{
+  /* Infinite loop */
+  for(;;)
+  {
+//    osDelay(1);
+
+    wifi_server();
+  }
+}
+
+/* SecondTask */
+void SecondTask(void const * argument)
+{
+  /* Infinite loop */
+  for(;;)
+  {
+//    osDelay(1);
+  }
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
+
 
 /**
   * @brief Reset button state
@@ -554,88 +600,6 @@ uint8_t Button_WaitForPush(uint32_t delay)
 
   return 0;
 }
-
-#if defined (TERMINAL_USE)
-/**
-  * @brief  Retargets the C library printf function to the USART.
-  * @param  None
-  * @retval None
-  */
-PUTCHAR_PROTOTYPE
-{
-  /* Place your implementation of fputc here */
-  /* e.g. write a character to the USART1 and Loop until the end of transmission */
-  HAL_UART_Transmit(&hDiscoUart, (uint8_t *)&ch, 1, 0xFFFF);
-
-  return ch;
-}
-
-
-#ifdef __ICCARM__
-/**
-  * @brief
-  * @param
-  * @retval
-  */
-size_t __read(int handle, unsigned char * buffer, size_t size)
-{
-  int nChars = 0;
-
-  /* handle ? */
-
-  for (/* Empty */; size > 0; --size)
-  {
-    uint8_t ch = 0;
-    while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *)&ch, 1, 30000))
-    {
-      ;
-    }
-
-    *buffer++ = ch;
-    ++nChars;
-  }
-
-  return nChars;
-}
-#elif defined(__CC_ARM) || defined(__GNUC__)
-/**
-  * @brief  Retargets the C library scanf function to the USART.
-  * @param  None
-  * @retval None
-  */
-GETCHAR_PROTOTYPE
-{
-  /* Place your implementation of fgetc here */
-  /* e.g. read a character on USART and loop until the end of read */
-  uint8_t ch = 0;
-  while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *)&ch, 1, 30000))
-  {
-    ;
-  }
-  return ch;
-}
-#endif /* defined(__CC_ARM)  */
-#endif /* TERMINAL_USE */
-
-#ifdef USE_FULL_ASSERT
-
-/**
-   * @brief Reports the name of the source file and the source line number
-   * where the assert_param error has occurred.
-   * @param file: pointer to the source file name
-   * @param line: assert_param error line source number
-   * @retval None
-   */
-void assert_failed(uint8_t* file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-    ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-
-}
-
-#endif
 
 
 /**
@@ -694,3 +658,39 @@ void Error_Handler(void)
   {
   }
 }
+
+#if defined (TERMINAL_USE)
+/**
+  * @brief  Retargets the C library printf function to the USART.
+  * @param  None
+  * @retval None
+  */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART1 and Loop until the end of transmission */
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+
+  return ch;
+}
+#endif
+
+#ifdef USE_FULL_ASSERT
+
+/**
+   * @brief Reports the name of the source file and the source line number
+   * where the assert_param error has occurred.
+   * @param file: pointer to the source file name
+   * @param line: assert_param error line source number
+   * @retval None
+   */
+void assert_failed(uint8_t* file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+    ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+
+}
+
+#endif
