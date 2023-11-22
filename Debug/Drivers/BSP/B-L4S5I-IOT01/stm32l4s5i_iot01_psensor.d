@@ -1,7 +1,7 @@
 Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.o: \
  ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.c \
  ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.h \
- ../Core/Inc/stm32l4s5i_iot01.h \
+ ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -32,12 +32,8 @@ Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.o: \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rng.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi_ex.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_sram.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_fmc.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
@@ -46,7 +42,7 @@ Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.o: \
  ../Drivers/BSP/B-L4S5I-IOT01/../Components/lps22hb/../Common/psensor.h \
  ../Drivers/BSP/B-L4S5I-IOT01/../Components/lps22hb/../Common/tsensor.h
 ../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.h:
-../Core/Inc/stm32l4s5i_iot01.h:
+../Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h:
@@ -77,12 +73,8 @@ Drivers/BSP/B-L4S5I-IOT01/stm32l4s5i_iot01_psensor.o: \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rng.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rtc_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_spi_ex.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_sram.h:
-../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_fmc.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
