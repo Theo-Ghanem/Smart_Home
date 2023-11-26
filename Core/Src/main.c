@@ -19,7 +19,7 @@
 #include "main.h"
 #include "html_builder.h"
 
-//#include "cmsis_os.h"
+#include "cmsis_os.h"
 
 #ifdef __ICCARM__
 #include <LowLevelIOInterface.h>
@@ -97,8 +97,8 @@ static void Button_ISR(void);
 static void Button_Reset(void);
 static uint8_t Button_WaitForPush(uint32_t delay);
 
-//osThreadId taskWifiHandle;
-//osThreadId taskSensorsHandle;
+osThreadId taskWifiHandle;
+osThreadId taskSensorsHandle;
 
 void StartTaskWifi(void const * argument){
 	wifi_server();
@@ -166,15 +166,14 @@ int main(void)
 #endif /* TERMINAL_USE */
 //  wifi_connect();
 
-//	osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 256);
-//	taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
-//
-//	/* definition and creation of taskBtnInput */
-//	osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 256);
-//	taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
-//
-//	osKernelStart();
-  wifi_server();
+	osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 512);
+	taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
+
+	osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 512);
+	taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
+
+	osKernelStart();
+//  wifi_server();
 }
 
 /**
@@ -282,6 +281,7 @@ int wifi_server(void)
     LOG(("Waiting connection to http://%d.%d.%d.%d\n\r",IP_Addr[0],IP_Addr[1],IP_Addr[2],IP_Addr[3]));
     while (WIFI_STATUS_OK != WIFI_WaitServerConnection(SOCKET, 1000, RemoteIP, sizeof(RemoteIP), &RemotePort))
     {
+    	osDelay(100);
         LOG(("."));
     }
 
