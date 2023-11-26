@@ -19,6 +19,8 @@
 #include "main.h"
 #include "html_builder.h"
 
+//#include "cmsis_os.h"
+
 #ifdef __ICCARM__
 #include <LowLevelIOInterface.h>
 #endif
@@ -95,6 +97,28 @@ static void Button_ISR(void);
 static void Button_Reset(void);
 static uint8_t Button_WaitForPush(uint32_t delay);
 
+//osThreadId taskWifiHandle;
+//osThreadId taskSensorsHandle;
+
+void StartTaskWifi(void const * argument){
+	wifi_server();
+//	for(;;){
+//		osDelay(100);
+//	}
+}
+
+void StartTaskSensors(void const * argument){
+	int on = 0;
+	for(;;){
+		osDelay(100);
+		on = !on;
+		if(on) BSP_LED_Off(LED2);
+		else BSP_LED_On(LED2);
+	}
+}
+
+
+
 /* Private functions ---------------------------------------------------------*/
 /**
   * @brief  Main program
@@ -115,6 +139,11 @@ int main(void)
   /* USER push button is used to ask if reconfiguration is needed */
   BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
+  BSP_TSENSOR_Init();
+//  BSP_PSENSOR_Init();
+//  BSP_HSENSOR_Init();
+
+
   /* WIFI Web Server demonstration */
 #if defined (TERMINAL_USE)
   /* Initialize all configured peripherals */
@@ -131,14 +160,20 @@ int main(void)
 
 
   BSP_COM_Init(COM1, &hDiscoUart);
-  BSP_TSENSOR_Init();
-//  BSP_PSENSOR_Init();
-//  BSP_HSENSOR_Init();
 
   printf("\n****** WIFI Web Server demonstration ******\n\r");
 
 #endif /* TERMINAL_USE */
+//  wifi_connect();
 
+//	osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 256);
+//	taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
+//
+//	/* definition and creation of taskBtnInput */
+//	osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 256);
+//	taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
+//
+//	osKernelStart();
   wifi_server();
 }
 
@@ -240,6 +275,7 @@ int wifi_server(void)
 
   do
   {
+//	osDelay(100);
     uint8_t RemoteIP[4];
     uint16_t RemotePort;
 
