@@ -70,5 +70,9 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+//void vApplicationTickHook( void )
+//{
+//  /* Called for every RTOS tick. */
+//  HAL_IncTick();
+//}
 /* USER CODE END Application */

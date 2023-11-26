@@ -126,10 +126,10 @@ void DebugMon_Handler(void)
   * @param  None
   * @retval None
   */
-//void SysTick_Handler(void)
-//{
-//  HAL_IncTick();
-//}
+void SysTick_Handler(void)
+{
+  HAL_IncTick();
+}
 
 /******************************************************************************/
 /*                 STM32L4xx Peripherals Interrupt Handlers                   */
