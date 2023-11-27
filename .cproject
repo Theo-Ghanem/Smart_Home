@@ -80,9 +80,6 @@
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec.1851752710" name="MCU Output Converter Motorola S-rec with symbols" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec"/>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.204547866.1645602938" name="stm32l4xx_it.c" rcbsApplicability="disable" resourcePath="Core/Src/stm32l4xx_it.c" toolsToInvoke="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1671105871.1078094847">
-						<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1671105871.1078094847" name="MCU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1671105871"/>
-					</fileInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
@@ -178,16 +175,6 @@
 		<project id="Smart_Home.null.1045333800" name="Smart_Home"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.204547866;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.204547866.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1671105871;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1146420474">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1602271447;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1602271447.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.668413922;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.177342038">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-	</storageModule>
 	<storageModule moduleId="refreshScope" versionNumber="2">
 		<configuration configurationName="Debug">
 			<resource resourceType="PROJECT" workspacePath="/Smart_Home"/>
@@ -196,4 +183,8 @@
 			<resource resourceType="PROJECT" workspacePath="/Smart_Home"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+		<buildTargets/>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration"/>
 </cproject>
