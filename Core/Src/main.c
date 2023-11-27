@@ -88,7 +88,7 @@ static  int     LedState = 0;
 #endif /* TERMINAL_USE */
 
 static void SystemClock_Config(void);
-static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temperature);
+static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint8_t pres, uint8_t humd);
 static int wifi_server(void);
 static int wifi_start(void);
 static int wifi_connect(void);
@@ -100,20 +100,16 @@ static uint8_t Button_WaitForPush(uint32_t delay);
 osThreadId taskWifiHandle;
 osThreadId taskSensorsHandle;
 
+uint8_t alarmEnabled = 0;
+uint8_t intruderDetected = 0;
+
 void StartTaskWifi(void const * argument){
 	wifi_server();
-//	for(;;){
-//		osDelay(100);
-//	}
 }
 
 void StartTaskSensors(void const * argument){
-	int on = 0;
 	for(;;){
 		osDelay(100);
-		on = !on;
-		if(on) BSP_LED_Off(LED2);
-		else BSP_LED_On(LED2);
 	}
 }
 
@@ -140,8 +136,8 @@ int main(void)
   BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
   BSP_TSENSOR_Init();
-//  BSP_PSENSOR_Init();
-//  BSP_HSENSOR_Init();
+  BSP_PSENSOR_Init();
+  BSP_HSENSOR_Init();
 
 
   /* WIFI Web Server demonstration */
@@ -164,7 +160,6 @@ int main(void)
   printf("\n****** WIFI Web Server demonstration ******\n\r");
 
 #endif /* TERMINAL_USE */
-//  wifi_connect();
 
 	osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 512);
 	taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
@@ -173,7 +168,6 @@ int main(void)
 	taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
 
 	osKernelStart();
-//  wifi_server();
 }
 
 /**
@@ -311,6 +305,7 @@ static bool WebServerProcess(void)
 {
   uint8_t temp;
   uint8_t pres;
+  uint8_t humd;
   uint16_t  respLen;
   static   uint8_t resp[1024];
   bool    stopserver=false;
@@ -324,8 +319,9 @@ static bool WebServerProcess(void)
       if(strstr((char *)resp, "GET")) /* GET: put web page */
       {
         temp = (uint8_t) BSP_TSENSOR_ReadTemp();
-//        pres = (uint8_t) BSP_PSENSOR_ReadPres();
-        if(SendWebPage(LedState, temp) != WIFI_STATUS_OK)
+        pres = (uint8_t) BSP_PSENSOR_ReadPressure();
+        humd = (uint8_t) BSP_HSENSOR_ReadHumidity();
+        if(SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
         {
           LOG(("> ERROR : Cannot send web page\n\r"));
         }
@@ -342,12 +338,12 @@ static bool WebServerProcess(void)
          {
            if(strstr((char *)resp, "radio=0"))
            {
-             LedState = 0;
+             alarmEnabled = 0;
              BSP_LED_Off(LED2);
            }
            else if(strstr((char *)resp, "radio=1"))
            {
-             LedState = 1;
+             alarmEnabled = 1;
              BSP_LED_On(LED2);
            }
            temp = (int) BSP_TSENSOR_ReadTemp();
@@ -363,8 +359,10 @@ static bool WebServerProcess(void)
              stopserver = true;
            }
          }
-         temp = (int) BSP_TSENSOR_ReadTemp();
-         if(SendWebPage(LedState, temp) != WIFI_STATUS_OK)
+         temp = (uint8_t) BSP_TSENSOR_ReadTemp();
+		 pres = (uint8_t) BSP_PSENSOR_ReadPressure();
+		 humd = (uint8_t) BSP_HSENSOR_ReadHumidity();
+         if(SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
          {
            LOG(("> ERROR : Cannot send web page\n\r"));
          }
@@ -388,11 +386,11 @@ static bool WebServerProcess(void)
   * @param  None
   * @retval None
   */
-static WIFI_Status_t SendWebPage(uint8_t ledIsOn, uint8_t temp)
+static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint8_t pres, uint8_t humd)
 {
   /* construct web page content */
   strcpy((char *)http, (char *)"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n");
-  strcat((char *)http, inject(0, temp, 50));
+  strcat((char *)http, inject(alarmEnabled, intruderDetected, temp, pres, humd));
 
   /* http is the buffer which contains the data to send. */
   /* httpDataLength is the length of the data to be sent. */

@@ -15,6 +15,6 @@
 
 #define HTML_LEN 2799
 
-char* inject(int alarmEnabled, int temp, int thermPercent);
+char* inject(int alarmEnabled, int intruderDetected, int temp, int pres, int humd);
 
 #endif /* INC_HTML_BUILDER_H_ */
