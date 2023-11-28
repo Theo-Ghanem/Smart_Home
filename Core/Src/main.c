@@ -86,21 +86,38 @@ static void MX_DAC1_Init(void);
 static void MX_USART1_UART_Init(void);
 
 osThreadId taskWifiHandle;
+osThreadId taskAlarmHandle;
 osThreadId taskSensorsHandle;
 
-uint8_t alarmEnabled = 0;
-uint8_t intruderDetected = 0;
+volatile uint8_t alarmEnabled = 0;
+volatile uint8_t intruderDetected = 1;
 
 void StartTaskWifi(void const *argument)
 {
     wifi_server();
 }
 
+void StartTaskAlarm(void const *argument)
+{
+    float32_t angle = 0;
+    for(;;)
+    {
+        osDelay(1);
+
+        if(alarmEnabled && intruderDetected){
+            float32_t sin = arm_sin_f32(angle);
+            uint32_t val = (uint32_t) ((sin + 1) * 100);
+            HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, val);
+            angle += 0.5;
+        }
+    }
+}
+
 void StartTaskSensors(void const *argument)
 {
     for (;;)
     {
-        osDelay(100);
+        osDelay(500);
     }
 }
 
@@ -139,11 +156,15 @@ int main(void)
 
     printf("\n****** Smart Home Secure Server ******\n\r");
 
-    osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 512);
-    taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
 
     osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 512);
     taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
+
+    osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 512);
+    taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
+
+    osThreadDef(taskAlarm, StartTaskAlarm, osPriorityNormal, 0, 512);
+    taskAlarmHandle = osThreadCreate(osThread(taskAlarm), NULL);
 
     osKernelStart();
 
@@ -251,9 +272,9 @@ int wifi_server(void)
         uint16_t RemotePort;
 
         LOG(("Waiting connection to http://%d.%d.%d.%d\n\r", IP_Addr[0], IP_Addr[1], IP_Addr[2], IP_Addr[3]));
-        while (WIFI_STATUS_OK != WIFI_WaitServerConnection(SOCKET, 1000, RemoteIP, sizeof(RemoteIP), &RemotePort))
+        while (WIFI_STATUS_OK != WIFI_WaitServerConnection(SOCKET, 100, RemoteIP, sizeof(RemoteIP), &RemotePort))
         {
-            osDelay(100);
+            osDelay(300);
             LOG(("."));
         }
 
