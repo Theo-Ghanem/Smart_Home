@@ -55,11 +55,7 @@ static wifi_config_t wifi_config;
 
 static uint8_t http[5000];
 static uint8_t  IP_Addr[4];
-static int LedState = 0;
-float32_t sin_value = 0.0;
 
-osThreadId defaultTaskHandle;
-osThreadId secondTaskHandle;
 DAC_HandleTypeDef hdac1;
 UART_HandleTypeDef huart1;
 
@@ -87,9 +83,6 @@ static uint8_t Button_WaitForPush(uint32_t delay);
 static void MX_GPIO_Init(void);
 static void MX_DAC1_Init(void);
 static void MX_USART1_UART_Init(void);
-static void StartDefaultTask(void const * argument);
-static void SecondTask(void const * argument);
-
 
 osThreadId taskWifiHandle;
 osThreadId taskSensorsHandle;
@@ -255,7 +248,6 @@ int wifi_server(void)
 
   do
   {
-//	osDelay(100);
     uint8_t RemoteIP[4];
     uint16_t RemotePort;
 
@@ -264,20 +256,6 @@ int wifi_server(void)
     {
     	osDelay(100);
         LOG(("."));
-        int count = 0;
-        if(LedState ==1){
-			while (count < 200)
-			{
-				for (float increment = 0; increment < 63; increment+=0.2) {
-					for (int delay = 0; delay<90; delay++) {;}
-
-					sin_value = arm_sin_f32(increment)*100+100;
-
-					HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, sin_value);
-				}
-				count++;
-			}
-        }
     }
 
     LOG(("\nClient connected %d.%d.%d.%d:%d\n\r",RemoteIP[0],RemoteIP[1],RemoteIP[2],RemoteIP[3],RemotePort));
@@ -426,12 +404,6 @@ static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected,
           httpDataLength -= curDataLengthSent;
       }
   }
-//  ret = WIFI_SendData(0, (uint8_t *)http, strlen((char *)http), &SentDataLength, WIFI_WRITE_TIMEOUT);
-
-//  if((ret == WIFI_STATUS_OK) && (SentDataLength != strlen((char *)http)))
-//  {
-//    ret = WIFI_STATUS_ERROR;
-//  }
 
   return ret;
 }
@@ -551,49 +523,6 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
 }
-
-/* StartDefaultTask */
-void StartDefaultTask(void const * argument)
-{
-  /* Infinite loop */
-  for(;;)
-  {
-//    osDelay(1);
-
-    wifi_server();
-  }
-}
-
-/* SecondTask */
-void SecondTask(void const * argument)
-{
-  /* Infinite loop */
-  for(;;)
-  {
-//    osDelay(1);
-  }
-}
-
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM6 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
-// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-// {
-//  /* USER CODE BEGIN Callback 0 */
-
-//  /* USER CODE END Callback 0 */
-//  if (htim->Instance == TIM6) {
-//    HAL_IncTick();
-//  }
-//  /* USER CODE BEGIN Callback 1 */
-
-//  /* USER CODE END Callback 1 */
-// }
 
 
 /**
