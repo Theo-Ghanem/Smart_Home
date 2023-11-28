@@ -1,12 +1,12 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    Wifi/WiFi_HTTP_Server/src/main.c
-  * @author  MCD Application Team
-  * @brief   This file provides main program functions
+  * @file           : main.c
+  * @brief          : Main program body
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2017 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -15,635 +15,317 @@
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "html_builder.h"
+#include "VL53L0X.h"
+#include "stdio.h"
 
-#include "cmsis_os.h"
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
-#ifdef __ICCARM__
-#include <LowLevelIOInterface.h>
-#endif
+/* USER CODE END Includes */
 
-/* Private defines -----------------------------------------------------------*/
-#define PORT           80
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
 
-#define TERMINAL_USE
+/* USER CODE END PTD */
 
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
 
-#define WIFI_WRITE_TIMEOUT 10000
-#define WIFI_READ_TIMEOUT  10000
-#define SOCKET                 0
-
-
-#ifdef  TERMINAL_USE
-#define LOG(a) printf a
-#else
-#define LOG(a)
-#endif
-
-#define SSID_SIZE     100
-#define PASSWORD_SIZE 100
-#define USER_CONF_MAGIC                 0x0123456789ABCDEFuLL
-
-/* Private typedef------------------------------------------------------------*/
-
-typedef struct {
-  char ssid[SSID_SIZE];
-  char password[PASSWORD_SIZE];
-  uint8_t security;
-} wifi_config_t;
-
-typedef struct {
-  uint64_t      wifi_config_magic;        /**< The USER_CONF_MAGIC magic word signals that the wifi config
-                                               (wifi_config_t) is present in Flash. */
-  wifi_config_t wifi_config;
-} user_config_t;
-
+/* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
 /* Private variables ---------------------------------------------------------*/
-#if defined (TERMINAL_USE)
-extern UART_HandleTypeDef hDiscoUart;
-#endif /* TERMINAL_USE */
+I2C_HandleTypeDef hi2c2;
 
-static volatile uint8_t button_flag = 0;
-static user_config_t user_config;
+UART_HandleTypeDef huart1;
 
-static  uint8_t http[5000];
-static  uint8_t  IP_Addr[4];
-static  int     LedState = 0;
+/* USER CODE BEGIN PV */
+char BUFFER[100] = {'\0'};
+
+
+/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-#if defined (TERMINAL_USE)
-#ifdef __GNUC__
-/* With GCC, small printf (option LD Linker->Libraries->Small printf
-   set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#define GETCHAR_PROTOTYPE int __io_getchar(void)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#define GETCHAR_PROTOTYPE int fgetc(FILE *f)
-#endif /* __GNUC__ */
-#endif /* TERMINAL_USE */
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_I2C2_Init(void);
+static void MX_USART1_UART_Init(void);
+/* USER CODE BEGIN PFP */
 
-static void SystemClock_Config(void);
-static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint8_t pres, uint8_t humd);
-static int wifi_server(void);
-static int wifi_start(void);
-static int wifi_connect(void);
-static bool WebServerProcess(void);
-static void Button_ISR(void);
-static void Button_Reset(void);
-static uint8_t Button_WaitForPush(uint32_t delay);
+/* USER CODE END PFP */
 
-osThreadId taskWifiHandle;
-osThreadId taskSensorsHandle;
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
-uint8_t alarmEnabled = 0;
-uint8_t intruderDetected = 0;
+/* USER CODE END 0 */
 
-void StartTaskWifi(void const * argument){
-	wifi_server();
-}
-
-void StartTaskSensors(void const * argument){
-	for(;;){
-		osDelay(100);
-	}
-}
-
-
-
-/* Private functions ---------------------------------------------------------*/
 /**
-  * @brief  Main program
-  * @param  None
-  * @retval None
+  * @brief  The application entry point.
+  * @retval int
   */
 int main(void)
 {
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
-  /* Configure LED2 */
-  BSP_LED_Init(LED2);
+  /* USER CODE BEGIN SysInit */
 
-  /* USER push button is used to ask if reconfiguration is needed */
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+  /* USER CODE END SysInit */
 
-  BSP_TSENSOR_Init();
-  BSP_PSENSOR_Init();
-  BSP_HSENSOR_Init();
-
-
-  /* WIFI Web Server demonstration */
-#if defined (TERMINAL_USE)
   /* Initialize all configured peripherals */
-  hDiscoUart.Instance = DISCOVERY_COM1;
-  hDiscoUart.Init.BaudRate = 115200;
-  hDiscoUart.Init.WordLength = UART_WORDLENGTH_8B;
-  hDiscoUart.Init.StopBits = UART_STOPBITS_1;
-  hDiscoUart.Init.Parity = UART_PARITY_NONE;
-  hDiscoUart.Init.Mode = UART_MODE_TX_RX;
-  hDiscoUart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  hDiscoUart.Init.OverSampling = UART_OVERSAMPLING_16;
-  hDiscoUart.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hDiscoUart.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  MX_GPIO_Init();
+  MX_I2C2_Init();
+  MX_USART1_UART_Init();
+  /* USER CODE BEGIN 2 */
 
+  	// Initialise the VL53L0X
+	statInfo_t_VL53L0X distanceStr;
+	initVL53L0X(1, &hi2c2);
 
-  BSP_COM_Init(COM1, &hDiscoUart);
+	// Configure the sensor for high accuracy and speed in 20 cm.
+	setSignalRateLimit(200);
+	setVcselPulsePeriod(VcselPeriodPreRange, 10);
+	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
+	setMeasurementTimingBudget(300 * 1000UL);
 
-  printf("\n****** WIFI Web Server demonstration ******\n\r");
+	uint16_t distance;
 
-#endif /* TERMINAL_USE */
+  /* USER CODE END 2 */
 
-	osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 512);
-	taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
 
-	osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 512);
-	taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
+    /* USER CODE BEGIN 3 */
+	//	uint16_t distance is the distance in millimeters.
+	//	statInfo_t_VL53L0X distanceStr is the statistics read from the sensor.
+	distance = readRangeSingleMillimeters(&distanceStr);
 
-	osKernelStart();
+	sprintf(BUFFER, "Distance: %d\r\n", distance);
+
+	HAL_UART_Transmit(&huart1, (uint8_t *)BUFFER, sizeof(BUFFER), HAL_MAX_DELAY);
+	memset(BUFFER, '\0', sizeof(BUFFER));
+  }
+  /* USER CODE END 3 */
 }
 
 /**
-  * @brief  Send HTML page
-  * @param  None
+  * @brief System Clock Configuration
   * @retval None
   */
-
-
-static int wifi_start(void)
+void SystemClock_Config(void)
 {
-  uint8_t  MAC_Addr[6];
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
- /*Initialize and use WIFI module */
-  if(WIFI_Init() ==  WIFI_STATUS_OK)
-  {
-    printf("eS-WiFi Initialized.\n\r");
-    if(WIFI_GetMAC_Address(MAC_Addr, sizeof(MAC_Addr)) == WIFI_STATUS_OK)
-    {
-      LOG(("eS-WiFi module MAC Address : %02X:%02X:%02X:%02X:%02X:%02X\n\r",
-               MAC_Addr[0],
-               MAC_Addr[1],
-               MAC_Addr[2],
-               MAC_Addr[3],
-               MAC_Addr[4],
-               MAC_Addr[5]));
-    }
-    else
-    {
-      LOG(("> ERROR : CANNOT get MAC address\n\r"));
-      return -1;
-    }
-  }
-  else
-  {
-    return -1;
-  }
-  return 0;
-}
-
-
-
-int wifi_connect(void)
-{
-  wifi_start();
-
-  memset(&user_config, 0, sizeof(user_config));
-
-//  Set wifi config
-  printf("Configuring SSID and password.\n\r");
-  strcpy(user_config.wifi_config.ssid, "Philippe");
-  char c = '3';
-  user_config.wifi_config.security = c - '0';
-  strcpy(user_config.wifi_config.password, "hahahaha");
-  user_config.wifi_config_magic = USER_CONF_MAGIC;
-// Try to connect to wifi
-  printf("Connecting to %s\n\r", user_config.wifi_config.ssid);
-  WIFI_Ecn_t security =  WIFI_ECN_WPA2_PSK;
-
-  if (WIFI_Connect(user_config.wifi_config.ssid, user_config.wifi_config.password, security) == WIFI_STATUS_OK)
-  {
-    if(WIFI_GetIP_Address(IP_Addr, sizeof(IP_Addr)) == WIFI_STATUS_OK)
-    {
-      LOG(("eS-WiFi module connected: got IP Address : %d.%d.%d.%d\n\r",
-               IP_Addr[0],
-               IP_Addr[1],
-               IP_Addr[2],
-               IP_Addr[3]));
-    }
-    else
-    {
-      LOG((" ERROR : es-wifi module CANNOT get IP address\n\r"));
-      return -1;
-    }
-  }
-  else
-  {
-     LOG(("ERROR : es-wifi module NOT connected\n\r"));
-     return -1;
-  }
-  return 0;
-}
-
-int wifi_server(void)
-{
-  bool StopServer = false;
-
-  LOG(("\nRunning HTML Server test\n\r"));
-  if (wifi_connect()!=0) return -1;
-
-
-  if (WIFI_STATUS_OK!=WIFI_StartServer(SOCKET, WIFI_TCP_PROTOCOL, 1, "", PORT))
-  {
-    LOG(("ERROR: Cannot start server.\n"));
-  }
-
-  LOG(("Server is running and waiting for an HTTP  Client connection to %d.%d.%d.%d\n\r",IP_Addr[0],IP_Addr[1],IP_Addr[2],IP_Addr[3]));
-
-  do
-  {
-//	osDelay(100);
-    uint8_t RemoteIP[4];
-    uint16_t RemotePort;
-
-    LOG(("Waiting connection to http://%d.%d.%d.%d\n\r",IP_Addr[0],IP_Addr[1],IP_Addr[2],IP_Addr[3]));
-    while (WIFI_STATUS_OK != WIFI_WaitServerConnection(SOCKET, 1000, RemoteIP, sizeof(RemoteIP), &RemotePort))
-    {
-    	osDelay(100);
-        LOG(("."));
-    }
-
-    LOG(("\nClient connected %d.%d.%d.%d:%d\n\r",RemoteIP[0],RemoteIP[1],RemoteIP[2],RemoteIP[3],RemotePort));
-
-    StopServer = WebServerProcess();
-
-    if (WIFI_CloseServerConnection(SOCKET) != WIFI_STATUS_OK)
-    {
-      LOG(("ERROR: failed to close current Server connection\n\r"));
-      return -1;
-    }
-  }
-  while(StopServer == false);
-
-  if (WIFI_STATUS_OK!=WIFI_StopServer(SOCKET))
-  {
-    LOG(("ERROR: Cannot stop server.\n\r"));
-  }
-
-  LOG(("Server is stop\n"));
-  return 0;
-}
-
-
-static bool WebServerProcess(void)
-{
-  uint8_t temp;
-  uint8_t pres;
-  uint8_t humd;
-  uint16_t  respLen;
-  static   uint8_t resp[1024];
-  bool    stopserver=false;
-
-  if (WIFI_STATUS_OK == WIFI_ReceiveData(SOCKET, resp, 1000, &respLen, WIFI_READ_TIMEOUT))
-  {
-   LOG(("get %d byte from server\n\r",respLen));
-
-   if( respLen > 0)
-   {
-      if(strstr((char *)resp, "GET")) /* GET: put web page */
-      {
-        temp = (uint8_t) BSP_TSENSOR_ReadTemp();
-        pres = (uint8_t) BSP_PSENSOR_ReadPressure();
-        humd = (uint8_t) BSP_HSENSOR_ReadHumidity();
-        if(SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
-        {
-          LOG(("> ERROR : Cannot send web page\n\r"));
-        }
-        else
-        {
-          LOG(("Send page after  GET command\n\r"));
-        }
-       }
-       else if(strstr((char *)resp, "POST"))/* POST: received info */
-       {
-         LOG(("Post request\n\r"));
-
-         if(strstr((char *)resp, "radio"))
-         {
-           if(strstr((char *)resp, "radio=0"))
-           {
-             alarmEnabled = 0;
-             BSP_LED_Off(LED2);
-           }
-           else if(strstr((char *)resp, "radio=1"))
-           {
-             alarmEnabled = 1;
-             BSP_LED_On(LED2);
-           }
-           temp = (int) BSP_TSENSOR_ReadTemp();
-         }
-         if(strstr((char *)resp, "stop_server"))
-         {
-           if(strstr((char *)resp, "stop_server=0"))
-           {
-             stopserver = false;
-           }
-           else if(strstr((char *)resp, "stop_server=1"))
-           {
-             stopserver = true;
-           }
-         }
-         temp = (uint8_t) BSP_TSENSOR_ReadTemp();
-		 pres = (uint8_t) BSP_PSENSOR_ReadPressure();
-		 humd = (uint8_t) BSP_HSENSOR_ReadHumidity();
-         if(SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
-         {
-           LOG(("> ERROR : Cannot send web page\n\r"));
-         }
-         else
-         {
-           LOG(("Send Page after POST command\n\r"));
-         }
-       }
-     }
-  }
-  else
-  {
-    LOG(("Client close connection\n\r"));
-  }
-  return stopserver;
-
- }
-
-/**
-  * @brief  Send HTML page
-  * @param  None
-  * @retval None
+  /** Configure the main internal regulator output voltage
   */
-static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint8_t pres, uint8_t humd)
-{
-  /* construct web page content */
-  strcpy((char *)http, (char *)"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n");
-  strcat((char *)http, inject(alarmEnabled, intruderDetected, temp, pres, humd));
-
-  /* http is the buffer which contains the data to send. */
-  /* httpDataLength is the length of the data to be sent. */
-  WIFI_Status_t ret;
-  uint32_t httpDataLength = strlen(http);
-  uint32_t dataLengthToSend;
-  uint32_t dataLengthSent = 0;
-
-  while( httpDataLength > 0 )
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
-      if(httpDataLength > 500)
-      {
-          dataLengthToSend = 500;
-      }
-      else
-      {
-          dataLengthToSend = httpDataLength;
-      }
-
-      uint16_t curDataLengthSent;
-      ret = WIFI_SendData(0, &http[dataLengthSent], dataLengthToSend, &curDataLengthSent, WIFI_WRITE_TIMEOUT );
-
-      if( ret != WIFI_STATUS_OK)
-      {
-          /* Handle failure (probably print a log). */
-          break;
-      }
-      else
-      {
-          /* Update what is left to send based on the length of the data actually sent. */
-    	  dataLengthSent += curDataLengthSent;
-          httpDataLength -= curDataLengthSent;
-      }
+    Error_Handler();
   }
-//  ret = WIFI_SendData(0, (uint8_t *)http, strlen((char *)http), &SentDataLength, WIFI_WRITE_TIMEOUT);
 
-//  if((ret == WIFI_STATUS_OK) && (SentDataLength != strlen((char *)http)))
-//  {
-//    ret = WIFI_STATUS_ERROR;
-//  }
-
-  return ret;
-}
-
-/**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow :
-  *            System Clock source            = PLL (MSI)
-  *            SYSCLK(Hz)                     = 80000000
-  *            HCLK(Hz)                       = 80000000
-  *            AHB Prescaler                  = 1
-  *            APB1 Prescaler                 = 1
-  *            APB2 Prescaler                 = 1
-  *            MSI Frequency(Hz)              = 4000000
-  *            PLL_M                          = 1
-  *            PLL_N                          = 40
-  *            PLL_R                          = 2
-  *            PLL_P                          = 7
-  *            PLL_Q                          = 4
-  *            Flash Latency(WS)              = 4
-  * @param  None
-  * @retval None
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
-static void SystemClock_Config(void)
-{
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-
-  /* MSI is enabled after System reset, activate PLL with MSI as source */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 40;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLP = 7;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    /* Initialization Error */
-    while(1);
+    Error_Handler();
   }
 
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
-     clocks dividers */
-  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
-    /* Initialization Error */
-    while(1);
+    Error_Handler();
   }
 }
 
 /**
-  * @brief Reset button state
-  *        To be called before Button_WaitForPush()
-  */
-void Button_Reset()
-{
-  button_flag = 0;
-}
-
-/**
-  * @brief Waiting for button to be pushed
-  */
-uint8_t Button_WaitForPush(uint32_t delay)
-{
-  uint32_t time_out = HAL_GetTick() + delay;
-
-  do
-  {
-    if (button_flag > 0)
-    {
-      return button_flag;
-    }
-    HAL_Delay(100);
-  }
-  while (HAL_GetTick() < time_out);
-
-  return 0;
-}
-
-#if defined (TERMINAL_USE)
-/**
-  * @brief  Retargets the C library printf function to the USART.
-  * @param  None
+  * @brief I2C2 Initialization Function
+  * @param None
   * @retval None
   */
-PUTCHAR_PROTOTYPE
+static void MX_I2C2_Init(void)
 {
-  /* Place your implementation of fputc here */
-  /* e.g. write a character to the USART1 and Loop until the end of transmission */
-  HAL_UART_Transmit(&hDiscoUart, (uint8_t *)&ch, 1, 0xFFFF);
 
-  return ch;
-}
+  /* USER CODE BEGIN I2C2_Init 0 */
 
+  /* USER CODE END I2C2_Init 0 */
 
-#ifdef __ICCARM__
-/**
-  * @brief
-  * @param
-  * @retval
-  */
-size_t __read(int handle, unsigned char * buffer, size_t size)
-{
-  int nChars = 0;
+  /* USER CODE BEGIN I2C2_Init 1 */
 
-  /* handle ? */
-
-  for (/* Empty */; size > 0; --size)
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.Timing = 0x10909CEC;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
   {
-    uint8_t ch = 0;
-    while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *)&ch, 1, 30000))
-    {
-      ;
-    }
-
-    *buffer++ = ch;
-    ++nChars;
+    Error_Handler();
   }
 
-  return nChars;
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c2, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
+
 }
-#elif defined(__CC_ARM) || defined(__GNUC__)
+
 /**
-  * @brief  Retargets the C library scanf function to the USART.
-  * @param  None
+  * @brief USART1 Initialization Function
+  * @param None
   * @retval None
   */
-GETCHAR_PROTOTYPE
+static void MX_USART1_UART_Init(void)
 {
-  /* Place your implementation of fgetc here */
-  /* e.g. read a character on USART and loop until the end of read */
-  uint8_t ch = 0;
-  while (HAL_OK != HAL_UART_Receive(&hDiscoUart, (uint8_t *)&ch, 1, 30000))
-  {
-    ;
-  }
-  return ch;
-}
-#endif /* defined(__CC_ARM)  */
-#endif /* TERMINAL_USE */
 
-#ifdef USE_FULL_ASSERT
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
 
 /**
-   * @brief Reports the name of the source file and the source line number
-   * where the assert_param error has occurred.
-   * @param file: pointer to the source file name
-   * @param line: assert_param error line source number
-   * @retval None
-   */
-void assert_failed(uint8_t* file, uint32_t line)
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
+}
+
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-    ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
-
 }
-
-#endif
-
-
-/**
-  * @brief  EXTI line detection callback.
-  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
-  * @retval None
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  switch (GPIO_Pin)
-  {
-    case (USER_BUTTON_PIN):
-    {
-      Button_ISR();
-      break;
-    }
-    case (GPIO_PIN_1):
-    {
-      SPI_WIFI_ISR();
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-}
-
-/**
-  * @brief  SPI3 line detection callback.
-  * @param  None
-  * @retval None
-  */
-void SPI3_IRQHandler(void)
-{
-  HAL_SPI_IRQHandler(&hspi);
-}
-
-/**
-  * @brief Update button ISR status
-  */
-static void Button_ISR(void)
-{
-  button_flag++;
-}
-
+#endif /* USE_FULL_ASSERT */
