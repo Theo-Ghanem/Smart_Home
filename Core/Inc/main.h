@@ -35,6 +35,8 @@
 #include "stm32l4s5i_iot01_tsensor.h"
 #include "stm32l4s5i_iot01_psensor.h"
 #include "stm32l4s5i_iot01_hsensor.h"
+
+#include "VL53L0X.h"
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 

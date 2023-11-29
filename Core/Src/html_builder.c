@@ -33,8 +33,8 @@ char* inject(int alarmEnabled, int intruderDetected, int temp, int pres, int hum
     sprintf(humdStr, "%d%%", humd);
     strncpy(&injected[956], humdStr, strlen(humdStr));
 
-    char* presStr = calloc(1, sizeof(char) * 8);
-    sprintf(presStr, "%dhPa", pres);
+    char* presStr = calloc(1, sizeof(char) * 16);
+    sprintf(presStr, "%d hPa", pres);
     strncpy(&injected[1073], presStr, strlen(presStr));
 
     return injected;

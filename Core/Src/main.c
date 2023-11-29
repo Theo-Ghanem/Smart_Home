@@ -52,13 +52,23 @@ typedef struct
 /* Private variables ---------------------------------------------------------*/
 
 static volatile uint8_t button_flag = 0;
+static uint16_t distance = 8190;
+static statInfo_t_VL53L0X distanceStr;
 static wifi_config_t wifi_config;
+
+volatile uint8_t alarmEnabled = 0;
+volatile uint8_t intruderDetected = 0;
 
 static uint8_t http[5000];
 static uint8_t IP_Addr[4];
 
 DAC_HandleTypeDef hdac1;
 UART_HandleTypeDef huart1;
+I2C_HandleTypeDef hi2c2;
+
+osThreadId taskWifiHandle;
+osThreadId taskAlarmHandle;
+osThreadId taskSensorsHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -73,7 +83,7 @@ UART_HandleTypeDef huart1;
 #endif /* __GNUC__ */
 
 static void SystemClock_Config(void);
-static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint8_t pres, uint8_t humd);
+static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint16_t pres, uint8_t humd);
 static int wifi_server(void);
 static int wifi_start(void);
 static int wifi_connect(void);
@@ -84,13 +94,7 @@ static uint8_t Button_WaitForPush(uint32_t delay);
 static void MX_GPIO_Init(void);
 static void MX_DAC1_Init(void);
 static void MX_USART1_UART_Init(void);
-
-osThreadId taskWifiHandle;
-osThreadId taskAlarmHandle;
-osThreadId taskSensorsHandle;
-
-volatile uint8_t alarmEnabled = 0;
-volatile uint8_t intruderDetected = 1;
+static void MX_I2C2_Init(void);
 
 void StartTaskWifi(void const *argument)
 {
@@ -102,7 +106,7 @@ void StartTaskAlarm(void const *argument)
     float32_t angle = 0;
     for(;;)
     {
-        osDelay(1);
+        osDelay(10);
 
         if(alarmEnabled && intruderDetected){
             float32_t sin = arm_sin_f32(angle);
@@ -118,6 +122,16 @@ void StartTaskSensors(void const *argument)
     for (;;)
     {
         osDelay(500);
+        distance = readRangeSingleMillimeters(&distanceStr);
+        // LOG(("Distance: %d\n\r", distance));  // Uncomment to debug distance
+        if (distance > 3000) {
+        	// No intruder
+        	intruderDetected = 0;
+        } else {
+        	// Intruder
+        	intruderDetected = 1;
+        }
+
     }
 }
 
@@ -149,6 +163,7 @@ int main(void)
     MX_GPIO_Init();
     MX_DAC1_Init();
     MX_USART1_UART_Init();
+    MX_I2C2_Init();
     BSP_COM_Init(COM1, &huart1);
 
     // Start peripherals
@@ -156,6 +171,13 @@ int main(void)
 
     printf("\n****** Smart Home Secure Server ******\n\r");
 
+  	// Initialize the VL53L0X
+    // Configure the sensor for high accuracy and speed in 20 cm.
+	initVL53L0X(1, &hi2c2);
+	setSignalRateLimit(200);
+	setVcselPulsePeriod(VcselPeriodPreRange, 10);
+	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
+	setMeasurementTimingBudget(300 * 1000UL);
 
     osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 512);
     taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
@@ -219,10 +241,10 @@ int wifi_connect(void)
 
     //  Set wifi config
     printf("Configuring SSID and password.\n\r");
-    strcpy(wifi_config.ssid, "Philippe");
+    strcpy(wifi_config.ssid, "Raph iPhone");
     char c = '3';
     wifi_config.security = c - '0';
-    strcpy(wifi_config.password, "hahahaha");
+    strcpy(wifi_config.password, "goodmorning");
     // Try to connect to wifi
     printf("Connecting to %s\n\r", wifi_config.ssid);
     WIFI_Ecn_t security = WIFI_ECN_WPA2_PSK;
@@ -301,7 +323,7 @@ int wifi_server(void)
 static bool WebServerProcess(void)
 {
     uint8_t temp;
-    uint8_t pres;
+    uint16_t pres;
     uint8_t humd;
     uint16_t respLen;
     static uint8_t resp[1024];
@@ -316,7 +338,7 @@ static bool WebServerProcess(void)
             if (strstr((char *)resp, "GET")) /* GET: put web page */
             {
                 temp = (uint8_t)BSP_TSENSOR_ReadTemp();
-                pres = (uint8_t)BSP_PSENSOR_ReadPressure();
+                pres = (uint16_t)BSP_PSENSOR_ReadPressure();
                 humd = (uint8_t)BSP_HSENSOR_ReadHumidity();
                 if (SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
                 {
@@ -357,7 +379,7 @@ static bool WebServerProcess(void)
                     }
                 }
                 temp = (uint8_t)BSP_TSENSOR_ReadTemp();
-                pres = (uint8_t)BSP_PSENSOR_ReadPressure();
+                pres = (uint16_t)BSP_PSENSOR_ReadPressure();
                 humd = (uint8_t)BSP_HSENSOR_ReadHumidity();
                 if (SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
                 {
@@ -382,7 +404,7 @@ static bool WebServerProcess(void)
  * @param  None
  * @retval None
  */
-static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint8_t pres, uint8_t humd)
+static WIFI_Status_t SendWebPage(uint8_t alarmEnabled, uint8_t intruderDetected, uint8_t temp, uint16_t pres, uint8_t humd)
 {
     /* construct web page content */
     strcpy((char *)http, (char *)"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nPragma: no-cache\r\n\r\n");
@@ -530,6 +552,54 @@ static void MX_USART1_UART_Init(void)
     {
         Error_Handler();
     }
+}
+
+/**
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C2_Init(void)
+{
+
+  /* USER CODE BEGIN I2C2_Init 0 */
+
+  /* USER CODE END I2C2_Init 0 */
+
+  /* USER CODE BEGIN I2C2_Init 1 */
+
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.Timing = 0x10909CEC;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c2, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
+
 }
 
 static void MX_GPIO_Init(void)
