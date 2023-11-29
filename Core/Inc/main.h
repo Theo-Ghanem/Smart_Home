@@ -51,6 +51,12 @@
 #define TEMP30_CAL_ADDR   ((uint16_t*) ((uint32_t)0x1FFF75A8))  /* Internal temperature sensor, parameter TS_CAL1: TS ADC raw data acquired at a temperature of 30 DegC (+-5 DegC) */
 #define TEMP110_CAL_ADDR  ((uint16_t*) ((uint32_t)0x1FFF75CA))  /* Internal temperature sensor, parameter TS_CAL2: TS ADC raw data acquired at a temperature of  110 DegC (+-5 DegC) */
 #define VDDA_TEMP_CAL                  ((uint32_t)3000)        /* Vdda value with which temperature sensor has been calibrated in production (+-10 mV). */
+#define RED_LED_Pin GPIO_PIN_3
+#define RED_LED_GPIO_Port GPIOE
+#define GREEN1_LED_Pin GPIO_PIN_5
+#define GREEN1_LED_GPIO_Port GPIOA
+#define GREEN2_LED_Pin GPIO_PIN_14
+#define GREEN2_LED_GPIO_Port GPIOB
 
 void Error_Handler(void);
 

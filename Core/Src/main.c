@@ -51,10 +51,13 @@ typedef struct
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 
-static volatile uint8_t button_flag = 0;
+volatile uint8_t button_flag = 0;
 static uint16_t distance = 8190;
 static statInfo_t_VL53L0X distanceStr;
 static wifi_config_t wifi_config;
+volatile uint8_t temp;
+volatile uint16_t pres;
+volatile uint8_t humd;
 
 volatile uint8_t alarmEnabled = 0;
 volatile uint8_t intruderDetected = 0;
@@ -69,6 +72,7 @@ I2C_HandleTypeDef hi2c2;
 osThreadId taskWifiHandle;
 osThreadId taskAlarmHandle;
 osThreadId taskSensorsHandle;
+osThreadId taskButtonHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -89,12 +93,11 @@ static int wifi_start(void);
 static int wifi_connect(void);
 static bool WebServerProcess(void);
 static void Button_ISR(void);
-static void Button_Reset(void);
-static uint8_t Button_WaitForPush(uint32_t delay);
 static void MX_GPIO_Init(void);
 static void MX_DAC1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_VL53L0X_Init(void);
 
 void StartTaskWifi(void const *argument)
 {
@@ -106,13 +109,13 @@ void StartTaskAlarm(void const *argument)
     float32_t angle = 0;
     for(;;)
     {
-        osDelay(10);
+        osDelay(1);
 
         if(alarmEnabled && intruderDetected){
             float32_t sin = arm_sin_f32(angle);
             uint32_t val = (uint32_t) ((sin + 1) * 100);
             HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_8B_R, val);
-            angle += 0.5;
+            angle += 30;
         }
     }
 }
@@ -122,17 +125,50 @@ void StartTaskSensors(void const *argument)
     for (;;)
     {
         osDelay(500);
-        distance = readRangeSingleMillimeters(&distanceStr);
-        // LOG(("Distance: %d\n\r", distance));  // Uncomment to debug distance
-        if (distance > 3000) {
-        	// No intruder
-        	intruderDetected = 0;
-        } else {
-        	// Intruder
-        	intruderDetected = 1;
+
+        // Turn on and off RED LED
+        if(alarmEnabled){
+            distance = readRangeSingleMillimeters(&distanceStr);
+            // LOG(("Distance: %d\n\r", distance));  // Uncomment to debug distance
+            if (distance > 3000) {
+            	if (intruderDetected != 0){
+                	// No intruder
+                	intruderDetected = 0;
+                	HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1);	// Red LED off
+            	}
+            } else {
+            	if (intruderDetected != 1){
+                	// Intruder
+                	intruderDetected = 1;
+                	HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 0);	// Red LED on
+            	}
+            }
         }
 
+        temp = (uint8_t)BSP_TSENSOR_ReadTemp();
+        pres = (uint16_t)BSP_PSENSOR_ReadPressure();
+        humd = (uint8_t)BSP_HSENSOR_ReadHumidity();
+
     }
+}
+
+void StartTaskButton(void const *argument)
+{
+    for (;;)
+    {
+    	osDelay(500);
+    	if (button_flag == 1) {
+    		if (alarmEnabled == 1) {
+    			alarmEnabled = 0;
+    			HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 0); // LED2 off
+    		} else {
+    			alarmEnabled = 1;
+    			HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 1); // LED2 on
+    		}
+    		button_flag = 0;
+    	}
+    }
+
 }
 
 /* Private functions ---------------------------------------------------------*/
@@ -149,9 +185,6 @@ int main(void)
     /* Configure the system clock */
     SystemClock_Config();
 
-    /* Configure LED2 */
-    BSP_LED_Init(LED2);
-
     /* USER push button is used to ask if reconfiguration is needed */
     BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
@@ -164,6 +197,7 @@ int main(void)
     MX_DAC1_Init();
     MX_USART1_UART_Init();
     MX_I2C2_Init();
+    MX_VL53L0X_Init();
     BSP_COM_Init(COM1, &huart1);
 
     // Start peripherals
@@ -171,22 +205,17 @@ int main(void)
 
     printf("\n****** Smart Home Secure Server ******\n\r");
 
-  	// Initialize the VL53L0X
-    // Configure the sensor for high accuracy and speed in 20 cm.
-	initVL53L0X(1, &hi2c2);
-	setSignalRateLimit(200);
-	setVcselPulsePeriod(VcselPeriodPreRange, 10);
-	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
-	setMeasurementTimingBudget(300 * 1000UL);
-
     osThreadDef(taskWifi, StartTaskWifi, osPriorityNormal, 0, 512);
     taskWifiHandle = osThreadCreate(osThread(taskWifi), NULL);
 
-    osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 512);
+    osThreadDef(taskSensors, StartTaskSensors, osPriorityNormal, 0, 128);
     taskSensorsHandle = osThreadCreate(osThread(taskSensors), NULL);
 
-    osThreadDef(taskAlarm, StartTaskAlarm, osPriorityNormal, 0, 512);
+    osThreadDef(taskAlarm, StartTaskAlarm, osPriorityAboveNormal, 0, 128);
     taskAlarmHandle = osThreadCreate(osThread(taskAlarm), NULL);
+
+    osThreadDef(taskButton, StartTaskButton, osPriorityNormal, 0, 128);
+    taskAlarmHandle = osThreadCreate(osThread(taskButton), NULL);
 
     osKernelStart();
 
@@ -258,6 +287,7 @@ int wifi_connect(void)
                  IP_Addr[1],
                  IP_Addr[2],
                  IP_Addr[3]));
+            HAL_GPIO_WritePin(GREEN1_LED_GPIO_Port, GREEN1_LED_Pin, 1);	// Turn LED GREEN1 on
         }
         else
         {
@@ -322,9 +352,6 @@ int wifi_server(void)
 
 static bool WebServerProcess(void)
 {
-    uint8_t temp;
-    uint16_t pres;
-    uint8_t humd;
     uint16_t respLen;
     static uint8_t resp[1024];
     bool stopserver = false;
@@ -337,9 +364,6 @@ static bool WebServerProcess(void)
         {
             if (strstr((char *)resp, "GET")) /* GET: put web page */
             {
-                temp = (uint8_t)BSP_TSENSOR_ReadTemp();
-                pres = (uint16_t)BSP_PSENSOR_ReadPressure();
-                humd = (uint8_t)BSP_HSENSOR_ReadHumidity();
                 if (SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
                 {
                     LOG(("> ERROR : Cannot send web page\n\r"));
@@ -358,12 +382,12 @@ static bool WebServerProcess(void)
                     if (strstr((char *)resp, "radio=0"))
                     {
                         alarmEnabled = 0;
-                        BSP_LED_Off(LED2);
+                        HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 0); // LED2 off
                     }
                     else if (strstr((char *)resp, "radio=1"))
                     {
                         alarmEnabled = 1;
-                        BSP_LED_On(LED2);
+                        HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 1);	// LED2 on
                     }
                     temp = (int)BSP_TSENSOR_ReadTemp();
                 }
@@ -378,9 +402,6 @@ static bool WebServerProcess(void)
                         stopserver = true;
                     }
                 }
-                temp = (uint8_t)BSP_TSENSOR_ReadTemp();
-                pres = (uint16_t)BSP_PSENSOR_ReadPressure();
-                humd = (uint8_t)BSP_HSENSOR_ReadHumidity();
                 if (SendWebPage(alarmEnabled, intruderDetected, temp, pres, humd) != WIFI_STATUS_OK)
                 {
                     LOG(("> ERROR : Cannot send web page\n\r"));
@@ -602,38 +623,53 @@ static void MX_I2C2_Init(void)
 
 }
 
+static void MX_VL53L0X_Init(void)
+{
+  	// Initialize the VL53L0X
+    // Configure the sensor for high accuracy and speed in 20 cm.
+	initVL53L0X(1, &hi2c2);
+	setSignalRateLimit(200);
+	setVcselPulsePeriod(VcselPeriodPreRange, 10);
+	setVcselPulsePeriod(VcselPeriodFinalRange, 14);
+	setMeasurementTimingBudget(300 * 1000UL);
+}
+
 static void MX_GPIO_Init(void)
 {
+
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
     /* GPIO Ports Clock Enable */
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-}
+	  __HAL_RCC_GPIOE_CLK_ENABLE();
+	  __HAL_RCC_GPIOC_CLK_ENABLE();
+	  __HAL_RCC_GPIOB_CLK_ENABLE();
+	  __HAL_RCC_GPIOA_CLK_ENABLE();
 
-/**
- * @brief Reset button state
- *        To be called before Button_WaitForPush()
- */
-void Button_Reset()
-{
-    button_flag = 0;
-}
+    /*Configure GPIO pin : RED_LED_Pin */
+    GPIO_InitStruct.Pin = RED_LED_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(RED_LED_GPIO_Port, &GPIO_InitStruct);
 
-/**
- * @brief Waiting for button to be pushed
- */
-uint8_t Button_WaitForPush(uint32_t delay)
-{
-    uint32_t time_out = HAL_GetTick() + delay;
+    /*Configure GPIO pin : GREEN1_LED_Pin */
+    GPIO_InitStruct.Pin = GREEN1_LED_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GREEN1_LED_GPIO_Port, &GPIO_InitStruct);
 
-    do
-    {
-        if (button_flag > 0)
-        {
-            return button_flag;
-        }
-        HAL_Delay(100);
-    } while (HAL_GetTick() < time_out);
+    /*Configure GPIO pin : GREEN2_LED_Pin */
+    GPIO_InitStruct.Pin = GREEN2_LED_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GREEN2_LED_GPIO_Port, &GPIO_InitStruct);
 
-    return 0;
+    // Reset LEDs states
+    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1);
+    HAL_GPIO_WritePin(GREEN1_LED_GPIO_Port, GREEN1_LED_Pin, 0);
+    HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 0);
 }
 
 /**
@@ -677,7 +713,7 @@ void SPI3_IRQHandler(void)
  */
 static void Button_ISR(void)
 {
-    button_flag++;
+    button_flag = 1;
 }
 
 /**

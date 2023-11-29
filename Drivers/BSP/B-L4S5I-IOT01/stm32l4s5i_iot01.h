@@ -93,6 +93,12 @@ typedef enum
 
 #define LEDx_GPIO_CLK_DISABLE(__INDEX__)  do{if((__INDEX__) == 0) LED2_GPIO_CLK_DISABLE();}while(0)
 
+
+#define LED8_PIN                         GPIO_PIN_14
+#define LED8_GPIO_PORT                   GPIOB
+#define LED8_GPIO_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
+#define LED8_GPIO_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
+
 /* Only one User/Wakeup button */
 #define BUTTONn                             ((uint8_t)1)
 
