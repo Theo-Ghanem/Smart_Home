@@ -90,7 +90,6 @@ static int wifi_connect(void);
 static bool WebServerProcess(void);
 static void Button_ISR(void);
 static void Button_Reset(void);
-static uint8_t Button_WaitForPush(uint32_t delay);
 static void MX_GPIO_Init(void);
 static void MX_DAC1_Init(void);
 static void MX_USART1_UART_Init(void);
@@ -615,25 +614,6 @@ static void MX_GPIO_Init(void)
 void Button_Reset()
 {
     button_flag = 0;
-}
-
-/**
- * @brief Waiting for button to be pushed
- */
-uint8_t Button_WaitForPush(uint32_t delay)
-{
-    uint32_t time_out = HAL_GetTick() + delay;
-
-    do
-    {
-        if (button_flag > 0)
-        {
-            return button_flag;
-        }
-        HAL_Delay(100);
-    } while (HAL_GetTick() < time_out);
-
-    return 0;
 }
 
 /**
