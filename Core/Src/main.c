@@ -161,6 +161,7 @@ void StartTaskButton(void const *argument)
     		if (alarmEnabled == 1) {
     			alarmEnabled = 0;
     			HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 0); // LED2 off
+    			HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1);	// Red LED off
     		} else {
     			alarmEnabled = 1;
     			HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 1); // LED2 on
@@ -383,6 +384,7 @@ static bool WebServerProcess(void)
                     {
                         alarmEnabled = 0;
                         HAL_GPIO_WritePin(GREEN2_LED_GPIO_Port, GREEN2_LED_Pin, 0); // LED2 off
+                        HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, 1);	// Red LED off
                     }
                     else if (strstr((char *)resp, "radio=1"))
                     {
